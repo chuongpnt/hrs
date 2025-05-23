@@ -2,8 +2,9 @@
 
 namespace Tests\Unit;
 
+use App\Http\Controllers\FlightHeightController;
 use App\Services\FlightHeightService;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class FlightHeightTest extends TestCase
 {
@@ -62,5 +63,33 @@ class FlightHeightTest extends TestCase
         $flights = [];
         $expected = [];
         $this->assertEquals($expected, $this->service->calculateFinalHeights($flights));
+    }
+
+    public function test_flight_height_by_level_invalid_level()
+    {
+        $service = $this->createMock(FlightHeightService::class);
+        $controller = new FlightHeightController($service);
+
+        $this->assertEquals('Invalid level!', $controller->flightHeightByLevel(0));
+        $this->assertEquals('Invalid level!', $controller->flightHeightByLevel(-3));
+        $this->assertEquals('Invalid level!', $controller->flightHeightByLevel(6));
+        $this->assertEquals('Invalid level!', $controller->flightHeightByLevel(100));
+    }
+
+    public function test_flight_height_by_level_count_mismatch()
+    {
+        $service = $this->createMock(FlightHeightService::class);
+        $controller = new FlightHeightController($service);
+
+        $service->method('readFlightsFromFile')->willReturnCallback(function ($inputPath, &$flightCount) {
+            $flightCount = 2;
+            return [[1], [2]];
+        });
+        $service->method('calculateFinalHeights')->willReturn([1]);
+
+        $this->assertEquals(
+            'Quantity of flights does not match!',
+            $controller->flightHeightByLevel(1)
+        );
     }
 }

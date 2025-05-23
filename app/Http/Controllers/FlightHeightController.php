@@ -11,22 +11,24 @@ class FlightHeightController extends Controller
     ) {}
 
     /**
-     * Process flight height calculation for level 1.
+     * Process flight height calculation for all level.
      *
-     * Reads input data from 'storage/input/level1.in', calculates final heights,
-     * and writes the results to 'storage/output/level1.in'.
+     * Reads input data from 'storage/input/level1_x.in', calculates final heights,
+     * and writes the results to 'storage/output/level1_x.out'.
      *
      * @return string
      */
-    public function flightHeightLevel1(): string
+    public function flightHeightByLevel(int $level): string
     {
-        $inputPath = storage_path('input/level1_1.in');
-        $outputPath = storage_path('output/level1_1.out');
+        if ($level < 1 || $level > 5) {
+            return 'Invalid level!';
+        }
+
+        $inputPath = storage_path("input/level1_{$level}.in");
+        $outputPath = storage_path("output/level1_{$level}.out");
 
         $flightCount = 0;
-
         $flights = $this->getFlights($inputPath, $flightCount);
-
         $results = $this->calculateFinalHeights($flights);
 
         if ($flightCount < 1 || count($results) !== $flightCount) {
@@ -35,7 +37,7 @@ class FlightHeightController extends Controller
 
         $this->saveResults($outputPath, $results);
 
-        return 'Finished file output: ' . $outputPath;
+        return "Finished file output: {$outputPath}";
     }
 
     /**
