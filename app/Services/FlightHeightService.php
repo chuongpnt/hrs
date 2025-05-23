@@ -26,15 +26,18 @@ class FlightHeightService
     }
 
     /**
-     * Calculates the final heights for an array of flights.
+     * Calculates the final heights for each flight at level 1.
      *
-     * For each flight (array of velocities), computes the cumulative height,
-     * resetting to zero if height ever goes negative.
+     * Level 1: Each flight is a sequence of velocities.
+     * - Drone starts at height 0
+     * - For each tick:
+     *     height = height (prev) + velocity
+     *     if height < 0, set height = 0 (the drone never goes below ground)
      *
-     * @param array $flights   Array of flights, each as an array of velocities.
-     * @return array           Final heights for each flight.
+     * @param array $flights  Each flight is an array of velocities (positive or negative integers)
+     * @return array          Final height of each flight
      */
-    public function calculateFinalHeights(array $flights): array
+    public function calculateFinalHeightsLevel1(array $flights): array
     {
         $results = [];
         foreach ($flights as $velocities) {
@@ -49,6 +52,42 @@ class FlightHeightService
         }
         return $results;
     }
+
+    /**
+     * Calculates the final heights for each flight at level 2.
+     * Level 2: Each flight is a sequence of accelerations.
+     * - Drone starts at height 0, velocity 0
+     * - Gravity = 10
+     * - Each tick:
+     *     velocity = velocity (prev) + acceleration - 10
+     *     height = height (prev) + velocity
+     *     if height < 0, set height = 0
+     *
+     * @param array $flights  Each flight is an array of accelerations (positive integers)
+     * @return array          Final height of each flight
+     */
+    public function calculateFinalHeightsLevel2(array $flights): array
+    {
+        $GRAVITY = 10;
+        $results = [];
+
+        foreach ($flights as $accelerations) {
+            $velocity = 0;
+            $height = 0;
+            foreach ($accelerations as $a) {
+                $velocity += $a;
+                $velocity -= $GRAVITY;
+                $height += $velocity;
+                if ($height < 0) {
+                    $height = 0;
+                }
+            }
+            $results[] = $height;
+        }
+
+        return $results;
+    }
+
 
     /**
      * Writes calculation results to the specified output file.

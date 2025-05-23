@@ -13,23 +13,30 @@ class FlightHeightController extends Controller
     /**
      * Process flight height calculation for all level.
      *
-     * Reads input data from 'storage/input/level1_x.in', calculates final heights,
-     * and writes the results to 'storage/output/level1_x.out'.
+     * Reads input data from 'storage/input/levelx_x.in', calculates final heights,
+     * and writes the results to 'storage/output/levelx_x.out'.
      *
      * @return string
      */
-    public function flightHeightByLevel(int $level): string
+    public function flightHeightByLevel(string $groupLevel, int $index): string
     {
-        if ($level < 1 || $level > 5) {
+        if (!in_array($groupLevel, ['level1', 'level2','level3','level4', 'level5']) || $index < 1) {
             return 'Invalid level!';
         }
 
-        $inputPath = storage_path("input/level1_{$level}.in");
-        $outputPath = storage_path("output/level1_{$level}.out");
+        $inputPath = storage_path("input/{$groupLevel}_{$index}.in");
+        $outputPath = storage_path("output/{$groupLevel}_{$index}.out");
 
         $flightCount = 0;
         $flights = $this->getFlights($inputPath, $flightCount);
-        $results = $this->calculateFinalHeights($flights);
+
+        if ($groupLevel === 'level1') {
+            $results = $this->flightService->calculateFinalHeightsLevel1($flights);
+        } elseif ($groupLevel === 'level2') {
+            $results = $this->flightService->calculateFinalHeightsLevel2($flights);
+        } else {
+            return 'Level not supported!';
+        }
 
         if ($flightCount < 1 || count($results) !== $flightCount) {
             return 'Quantity of flights does not match!';
@@ -39,6 +46,7 @@ class FlightHeightController extends Controller
 
         return "Finished file output: {$outputPath}";
     }
+
 
     /**
      * Reads flights data from the input file.
@@ -50,17 +58,6 @@ class FlightHeightController extends Controller
     protected function getFlights(string $inputPath, int &$flightCount): array
     {
         return $this->flightService->readFlightsFromFile($inputPath, $flightCount);
-    }
-
-    /**
-     * Calculates final heights for each flight.
-     *
-     * @param array $flights
-     * @return array
-     */
-    protected function calculateFinalHeights(array $flights): array
-    {
-        return $this->flightService->calculateFinalHeights($flights);
     }
 
     /**

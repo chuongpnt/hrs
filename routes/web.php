@@ -7,5 +7,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/flight-height-level-{level}', [FlightHeightController::class, 'flightHeightByLevel']);
-
+Route::get('/flight-height/{groupLevel}/{index}', [FlightHeightController::class, 'flightHeightByLevel']);
