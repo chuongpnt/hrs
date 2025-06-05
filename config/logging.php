@@ -1,5 +1,7 @@
 <?php
 
+use Gelf\Publisher;
+use Gelf\Transport\UdpTransport;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -127,6 +129,15 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'graylog' => [
+            'driver' => 'monolog',
+            'handler' => Monolog\Handler\GelfHandler::class,
+            'handler_with' => [
+                // if using docker compose, hostname = 'graylog'
+                'publisher' => new Publisher(new UdpTransport('graylog', 12201)),
+            ],
+            'formatter' => Monolog\Formatter\GelfMessageFormatter::class,
+        ],
     ],
 
 ];

@@ -1,6 +1,7 @@
 version: "3.8"
 
 services:
+  # PHP-FPM Laravel App
   app:
     build: .
     container_name: laravel_app
@@ -8,21 +9,83 @@ services:
     volumes:
       - ./:/var/www/html
     networks:
-      - laravel
-    expose:
-      - 9000
+      - backend
+    depends_on:
+      - db
 
+  # Nginx web server
   web:
-    platform: linux/amd64
     image: nginx:alpine
+    container_name: laravel_nginx
     ports:
-      - 80:80
+      - "80:80"
     volumes:
       - .:/var/www/html
       - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
     networks:
-      - laravel
+      - backend
+    depends_on:
+      - app
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: laravel_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - backend
+
+  # MongoDB for Graylog metadata
+  mongo:
+    image: mongo:5.0
+    container_name: graylog_mongo
+    networks:
+      - backend
+
+  # Elasticsearch for Graylog logs
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    container_name: graylog_es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - backend
+
+  # Graylog
+  graylog:
+    image: graylog/graylog:5.0
+    container_name: graylog
+    environment:
+      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_PASSWORD_SECRET}
+      - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD_SHA2}
+      - GRAYLOG_HTTP_EXTERNAL_URI=${GRAYLOG_HTTP_EXTERNAL_URI}
+    depends_on:
+      - mongo
+      - elasticsearch
+    networks:
+      - backend
+    ports:
+      - "9000:9000"        # Graylog web UI
+      - "12201:12201/udp"  # GELF UDP log input
+
+volumes:
+  db_data:
 
 networks:
-  laravel:
+  backend:
     driver: bridge

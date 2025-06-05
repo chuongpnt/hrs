@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Helpers\GraylogHelper;
+
 class FlightHeightService
 {
     /**
@@ -16,6 +18,14 @@ class FlightHeightService
      */
     public function readFlightsFromFile(string $filepath, ?int &$flightCount = null): array
     {
+        if (!file_exists($filepath)) {
+            GraylogHelper::error('Input file not found', [
+                'filepath' => $filepath
+            ]);
+            $flightCount = 0;
+            return [];
+        }
+
         $lines = file($filepath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         $flightCount = isset($lines[0]) ? (int)trim($lines[0]) : 0;
         $flights = [];
@@ -101,6 +111,18 @@ class FlightHeightService
     public function writeResultsToFile(string $filepath, array $results): void
     {
         $output = implode(PHP_EOL, $results);
-        file_put_contents($filepath, $output);
+        $written = file_put_contents($filepath, $output);
+
+        if ($written === false) {
+            GraylogHelper::error('Failed to write results', [
+                'filepath' => $filepath,
+                'results' => $results,
+            ]);
+        } else {
+            GraylogHelper::info('Results written to file', [
+                'filepath' => $filepath,
+                'resultsCount' => count($results),
+            ]);
+        }
     }
 }

@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FlightGroupLevel;
+use App\Helpers\GraylogHelper;
 use App\Services\FlightHeightService;
+use Illuminate\Support\Facades\Log;
 
 class FlightHeightController extends Controller
 {
@@ -20,7 +23,24 @@ class FlightHeightController extends Controller
      */
     public function flightHeightByLevel(string $groupLevel, int $index): string
     {
-        if (!in_array($groupLevel, ['level1', 'level2','level3','level4', 'level5']) || $index < 1) {
+        GraylogHelper::info('flightHeightByLevel called', [
+            'groupLevel' => $groupLevel,
+            'index' => $index,
+        ]);
+
+        if (!in_array($groupLevel, [
+                    FlightGroupLevel::Level1->value,
+                    FlightGroupLevel::Level2->value,
+                    FlightGroupLevel::Level3->value,
+                    FlightGroupLevel::Level4->value,
+                    FlightGroupLevel::Level5->value,
+                ]
+            ) || $index < 1) {
+
+            GraylogHelper::warning('Invalid level/index in flightHeightByLevel', [
+                'groupLevel' => $groupLevel,
+                'index' => $index,
+            ]);
             return 'Invalid level!';
         }
 
@@ -30,20 +50,36 @@ class FlightHeightController extends Controller
         $flightCount = 0;
         $flights = $this->getFlights($inputPath, $flightCount);
 
-        if ($groupLevel === 'level1') {
+        if ($groupLevel ===  FlightGroupLevel::Level1->value) {
             $results = $this->flightService->calculateFinalHeightsLevel1($flights);
-        } elseif ($groupLevel === 'level2') {
+        } elseif ($groupLevel ===  FlightGroupLevel::Level2->value) {
             $results = $this->flightService->calculateFinalHeightsLevel2($flights);
         } else {
+            GraylogHelper::warning('Level not supported in flightHeightByLevel', [
+                'groupLevel' => $groupLevel,
+                'index' => $index,
+            ]);
             return 'Level not supported!';
         }
 
+
         if ($flightCount < 1 || count($results) !== $flightCount) {
+            GraylogHelper::error('Quantity of flights does not match', [
+                'flightCount' => $flightCount,
+                'resultsCount' => count($results),
+                'groupLevel' => $groupLevel,
+                'index' => $index,
+            ]);
             return 'Quantity of flights does not match!';
         }
 
         $this->saveResults($outputPath, $results);
 
+        GraylogHelper::info('Finished writing output file', [
+            'outputPath' => $outputPath,
+            'groupLevel' => $groupLevel,
+            'index' => $index,
+        ]);
         return "Finished file output: {$outputPath}";
     }
 
