@@ -20,6 +20,12 @@ RUN apk add --no-cache \
         --with-jpeg \
     && docker-php-ext-install gd
 
+#for rabbitmq
+RUN apk add --no-cache linux-headers && docker-php-ext-install sockets
+
+#for mysql
+RUN docker-php-ext-install pdo pdo_mysql
+
 # Install Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/local/bin/composer
 

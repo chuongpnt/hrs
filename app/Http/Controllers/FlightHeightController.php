@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Enums\FlightGroupLevel;
 use App\Helpers\GraylogHelper;
+use App\Jobs\SendBulkMailJob;
 use App\Services\FlightHeightService;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Bus;
 
 class FlightHeightController extends Controller
 {
@@ -80,6 +81,10 @@ class FlightHeightController extends Controller
             'groupLevel' => $groupLevel,
             'index' => $index,
         ]);
+
+
+        $this->sendBulkEmails();
+
         return "Finished file output: {$outputPath}";
     }
 
@@ -106,5 +111,36 @@ class FlightHeightController extends Controller
     protected function saveResults(string $outputPath, array $results): void
     {
         $this->flightService->writeResultsToFile($outputPath, $results);
+    }
+
+    public function sendBulkEmails()
+    {
+        $startTime = microtime(true);
+
+        // Create 1000 emails list
+        $emails = [];
+        for ($i = 1; $i <= 1000; $i++) {
+            $emails[] = "user{$i}@example.com";
+        }
+
+        // Configuration emails per batch
+        $batchSize = 100;
+        $emailBatches = array_chunk($emails, $batchSize);
+
+        // Dispatch
+        $batchCount = 0;
+        foreach ($emailBatches as $batchIndex => $batch) {
+            // Add all email of a batch into job
+            $jobs = array_map(function ($email) use ($batchIndex) {
+                return new SendBulkMailJob($email, 'This is RabbmitMQ test.', $batchIndex + 1);
+            }, $batch);
+
+            Bus::batch($jobs)
+                ->onQueue('Mail') // set job name
+                ->then(function () use ($startTime, &$batchCount, $batchSize) {
+                $batchCount++;
+            })->dispatch();
+        }
+        return 'Finished ' . count($emailBatches) . '!';
     }
 }

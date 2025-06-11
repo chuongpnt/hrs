@@ -12,6 +12,7 @@ services:
       - backend
     depends_on:
       - db
+      - rabbitmq
 
   # Nginx web server
   web:
@@ -33,10 +34,10 @@ services:
     container_name: laravel_db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -82,6 +83,28 @@ services:
     ports:
       - "9000:9000"        # Graylog web UI
       - "12201:12201/udp"  # GELF UDP log input
+
+  # Rabbitmq
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    networks:
+      - backend
+    ports:
+      - "15672:15672" # Web UI
+      - "5672:5672"   # AMQP port
+
+  # Mailhog
+  mailhog:
+    image: mailhog/mailhog
+    networks:
+      - backend
+    ports:
+      - "8025:8025"     # Web UI
+      - "1025:1025"     # SMTP
 
 volumes:
   db_data:
