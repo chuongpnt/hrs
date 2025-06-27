@@ -7,12 +7,12 @@ services:
     container_name: laravel_app
     working_dir: /var/www/html
     volumes:
-      - ./:/var/www/html
+      - ./backend:/var/www/html
     networks:
       - backend
     depends_on:
       - db
-      - rabbitmq
+#      - rabbitmq
 
   # Nginx web server
   web:
@@ -21,7 +21,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - .:/var/www/html
+      - ./backend:/var/www/html
       - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
     networks:
       - backend
@@ -46,56 +46,56 @@ services:
       - backend
 
   # MongoDB for Graylog metadata
-  mongo:
-    image: mongo:5.0
-    container_name: graylog_mongo
-    networks:
-      - backend
-
-  # Elasticsearch for Graylog logs
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-    container_name: graylog_es
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    networks:
-      - backend
-
-  # Graylog
-  graylog:
-    image: graylog/graylog:5.0
-    container_name: graylog
-    environment:
-      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_PASSWORD_SECRET}
-      - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD_SHA2}
-      - GRAYLOG_HTTP_EXTERNAL_URI=${GRAYLOG_HTTP_EXTERNAL_URI}
-    depends_on:
-      - mongo
-      - elasticsearch
-    networks:
-      - backend
-    ports:
-      - "9000:9000"        # Graylog web UI
-      - "12201:12201/udp"  # GELF UDP log input
+#  mongo:
+#    image: mongo:5.0
+#    container_name: graylog_mongo
+#    networks:
+#      - backend
+#
+#  # Elasticsearch for Graylog logs
+#  elasticsearch:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+#    container_name: graylog_es
+#    environment:
+#      - discovery.type=single-node
+#      - xpack.security.enabled=false
+#      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    networks:
+#      - backend
+#
+#  # Graylog
+#  graylog:
+#    image: graylog/graylog:5.0
+#    container_name: graylog
+#    environment:
+#      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_PASSWORD_SECRET}
+#      - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD_SHA2}
+#      - GRAYLOG_HTTP_EXTERNAL_URI=${GRAYLOG_HTTP_EXTERNAL_URI}
+#    depends_on:
+#      - mongo
+#      - elasticsearch
+#    networks:
+#      - backend
+#    ports:
+#      - "9000:9000"        # Graylog web UI
+#      - "12201:12201/udp"  # GELF UDP log input
 
   # Rabbitmq
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-    networks:
-      - backend
-    ports:
-      - "15672:15672" # Web UI
-      - "5672:5672"   # AMQP port
+#  rabbitmq:
+#    image: rabbitmq:3-management
+#    container_name: rabbitmq
+#    environment:
+#      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+#      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+#    networks:
+#      - backend
+#    ports:
+#      - "15672:15672" # Web UI
+#      - "5672:5672"   # AMQP port
 
   # Mailhog
   mailhog:
